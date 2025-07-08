@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sabor do Brasil</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
+    .container { display: flex; flex: 1; }
+    .perfil { width: 20%; padding: 20px; background-color: #f9f9f9; }
+    .logo { width: 100%; max-width: 120px; }
+    .linha-laranja { border: 1px solid #D97014; margin: 10px 0; }
+    .principal { width: 60%; padding: 20px; border-left: 2px solid #C2BEBE; border-right: 2px solid #C2BEBE; }
+    .principal header { display: flex; justify-content: space-between; align-items: center; }
+    .principal h1 { color: #000; text-align: center; flex-grow: 1; margin: 0; }
+    .botao-login { background-color: #D97014; color: #fff; font-weight: bold; border: none; padding: 10px 15px; cursor: pointer; border-radius: 3px; }
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-conteudo { background: white; padding: 20px; width: 300px; border-radius: 5px; box-shadow: 0 0 10px #00000050; }
+    .oculto { display: none; }
+    .modal input { width: 100%; margin-bottom: 10px; padding: 8px; font-size: 16px; box-sizing: border-box; }
+    .botoes-modal { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 5px; }
+    .cancelar { border: 1px solid #D97014; background: none; color: #D97014; padding: 8px 12px; cursor: pointer; border-radius: 3px; flex: 1; }
+    .entrar, .criar-conta { background: #D97014; color: #fff; border: none; padding: 8px 12px; cursor: pointer; border-radius: 3px; flex: 1; }
+    .erro { color: red; font-size: 14px; min-height: 18px; }
+    .receita { border: 1px solid #C2BEBE; padding: 15px; margin: 10px 0; display: flex; gap: 15px; align-items: flex-start; flex-wrap: wrap; }
+    .receita img { width: 100px; height: 100px; object-fit: cover; }
+    .info-receita { flex: 1; min-width: 250px; }
+    .interacoes { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+    .interacoes svg { width: 20px; height: 20px; cursor: pointer; user-select: none; fill: #D97014; transition: fill 0.3s ease; }
+    .interacoes svg:hover { fill: #b35c0f; }
+    .comentarios { margin-top: 10px; font-size: 14px; max-width: 100%; width: 100%; }
+    .estrela { color: gold; font-size: 20px; user-select: none; margin-right: 2px; }
+    footer { background-color: #D97014; color: #fff; text-align: center; padding: 15px; margin-top: auto; }
+    footer .redes svg { width: 20px; height: 20px; margin: 0 5px; vertical-align: middle; fill: #fff; cursor: pointer; transition: fill 0.3s ease; }
+    footer .redes svg:hover { fill: #b35c0f; }
+    #lixeira-lista .receita { background-color: #ffe6cc; border-color: #ff9900; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <aside class="perfil">
+      <img src="https://static.vecteezy.com/ti/vetor-gratis/p1/4854318-cooking-academy-logo-template-chef-school-course-logo-icon-with-spatula-and-chef-hat-vetor.jpg" alt="Logo Receitas & Sabores" class="logo" />
+      <h2>SABOR DO BRASIL</h2>
+      <hr class="linha-laranja" />
+      <p>Total de Likes: <span id="total-likes">0</span></p>
+      <p>Total de Dislikes: <span id="total-dislikes">0</span></p>
+    </aside>
+
+    <main class="principal">
+      <header>
+        <h1>Publicações</h1>
+        <div id="login-area">
+          <button id="btn-login" class="botao-login">Entrar</button>
+        </div>
+      </header>
+
+      <input type="text" id="campo-busca" placeholder="Buscar por nome ou origem..." style="padding: 8px; width: 100%; margin: 15px 0; font-size: 16px;" />
+      <button id="ordenar-estrelas" class="botao-login" style="margin-bottom: 15px;">Ordenar por Estrelas</button>
+
+      <section id="livros-lista"></section>
+      <hr>
+      <button id="aba-lixeira" class="botao-login" style="margin: 20px;">Ver Lixeira</button>
+      <section id="lixeira-lista" class="oculto"></section>
+
+      <hr>
+      <button id="btn-adicionar-livro" class="botao-login">Adicionar Receita</button>
+    </main>
+  </div>
+
+  <!-- Modal: Login -->
+  <div id="modal-login" class="modal oculto">
+    <div class="modal-conteudo">
+      <h2 id="titulo-modal">Login</h2>
+      <input type="text" id="usuario" placeholder="Usuário" />
+      <input type="password" id="senha" placeholder="Senha" />
+      <p class="erro" id="erro-login"></p>
+      <div class="botoes-modal">
+        <button id="cancelar" class="cancelar">Cancelar</button>
+        <button id="entrar" class="entrar">Entrar</button>
+        <button id="criar" class="criar-conta">Criar Conta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Adicionar Receita -->
+  <div id="form-adicionar-livro" class="modal oculto">
+    <div class="modal-conteudo">
+      <h2>Adicionar Nova Receita</h2>
+      <input type="text" id="novo-titulo" placeholder="Nome da Receita" />
+      <input type="text" id="novo-autor" placeholder="Origem" />
+      <input type="text" id="novo-capa" placeholder="URL da Imagem" />
+      <p class="erro" id="erro-adicionar"></p>
+      <div class="botoes-modal">
+        <button id="cancelar-adicao" class="cancelar">Cancelar</button>
+        <button id="confirmar-adicao" class="criar-conta">Adicionar</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Sabor Do Brasil</p>
+    <div class="redes">
+      <svg viewBox="0 0 24 24" title="Instagram"><path d="M7 2C4.79 2 3 3.79 …"/></svg>
+      <svg viewBox="0 0 24 24" title="Twitter"><path d="…"/></svg>
+      <svg viewBox="0 0 24 24" title="Facebook"><path d="…"/></svg>
+    </div>
+  </footer>
+
+  <script>
+   const receitas = [
+  { nome: 'Feijoada', origem: 'Brasil', imagem: 'https://i.panelinha.com.br/i1/bk-9097-39-panelinha-12-02-200635.webp', likes: 0, dislikes: 0, comentarios: [], estrelas: 0, id: 1, removido: false },
+  { nome: 'Strogonoff', origem: 'Brasil', imagem: 'https://receitasdepesos.com.br/wp-content/uploads/2025/03/strogonoff-de-frango.jpg', likes: 0, dislikes: 0, comentarios: [], estrelas: 0, id: 2, removido: false },
+  { nome: 'Moqueca Baiana', origem: 'Bahia, Brasil', imagem: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRb0jyCa9EEqFYdEGWJ8anI-TyDNqgceC7GEw&s', likes: 0, dislikes: 0, comentarios: [], estrelas: 0, id: 3, removido: false },
+  { nome: 'Pão de Queijo', origem: 'Minas Gerais', imagem: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTGdt_gMXmSj7Hbr14GwbBq9q4qf91JimRH2w&s', likes: 0, dislikes: 0, comentarios: [], estrelas: 0, id: 4, removido: false },
+  { nome: 'Acarajé', origem: 'Bahia', imagem: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRABC1z5-7KEayHoQO4ekyDti__euITVSCFnw&s', likes: 0, dislikes: 0, comentarios: [], estrelas: 0, id: 5, removido: false },
+  { nome: 'Bolo de Cenoura', origem: 'Brasil', imagem: 'https://guiadacozinha.com.br/wp-content/uploads/2024/05/bolodecenoura.jpg', likes: 0, dislikes: 0, comentarios: [], estrelas: 0, id: 6, removido: false }
+];
+
+    let usuarioLogado = null;
+    const usuarios = {};
+    let mostrandoLixeira = false;
+    let ordenarPorEstrelas = false;
+
+    const listaEl = document.getElementById('livros-lista');
+    const totalLikesEl = document.getElementById('total-likes');
+    const totalDislikesEl = document.getElementById('total-dislikes');
+    const campoBusca = document.getElementById('campo-busca');
+    const btnOrdenarEstrelas = document.getElementById('ordenar-estrelas');
+    const abaLixeiraBtn = document.getElementById('aba-lixeira');
+    const lixeiraLista = document.getElementById('lixeira-lista');
+
+    const modalLogin = document.getElementById('modal-login');
+    const tituloModal = document.getElementById('titulo-modal');
+    const inputUsuario = document.getElementById('usuario');
+    const inputSenha = document.getElementById('senha');
+    const erroLogin = document.getElementById('erro-login');
+    const btnCancelar = document.getElementById('cancelar');
+    const btnEntrar = document.getElementById('entrar');
+    const btnCriar = document.getElementById('criar');
+    const loginArea = document.getElementById('login-area');
+
+    const btnAdicionar = document.getElementById('btn-adicionar-livro');
+    const modalAdicionar = document.getElementById('form-adicionar-livro');
+    const cancelarAdicao = document.getElementById('cancelar-adicao');
+    const confirmarAdicao = document.getElementById('confirmar-adicao');
+    const novoTitulo = document.getElementById('novo-titulo');
+    const novoAutor = document.getElementById('novo-autor');
+    const novoCapa = document.getElementById('novo-capa');
+    const erroAdicionar = document.getElementById('erro-adicionar');
+
+    function salvarEstado() {
+      localStorage.setItem('receitas', JSON.stringify(receitas));
+      localStorage.setItem('usuarios', JSON.stringify(usuarios));
+      localStorage.setItem('usuarioLogado', usuarioLogado);
+    }
+
+    function carregarEstado() {
+      const rs = localStorage.getItem('receitas');
+      if (rs) {
+        const arr = JSON.parse(rs);
+        arr.forEach(r => {
+          const rec = receitas.find(x => x.id === r.id);
+          if (rec) {
+            Object.assign(rec, { likes: r.likes, dislikes: r.dislikes, comentarios: r.comentarios, estrelas: r.estrelas, removido: r.removido });
+          } else receitas.push(r);
+        });
+      }
+      const us = localStorage.getItem('usuarios');
+      if (us) Object.assign(usuarios, JSON.parse(us));
+      const log = localStorage.getItem('usuarioLogado');
+      if (log) usuarioLogado = log;
+    }
+
+    function atualizarContadores() {
+      let tl=0, td=0;
+      receitas.forEach(r => { if(!r.removido){ tl+=r.likes; td+=r.dislikes; }});
+      totalLikesEl.textContent = tl;
+      totalDislikesEl.textContent = td;
+    }
+
+    function criarEstrelas(n){
+      let s='';
+      for(let i=1;i<=5;i++) s+=`<span class="estrela" data-estrela="${i}">${i<=n?'★':'☆'}</span>`;
+      return s;
+    }
+
+    function renderizar(filtro='', mostrarL=false){
+      const f = filtro.toLowerCase();
+      const base = mostrarL ? receitas.filter(r=>r.removido) : receitas.filter(r=>!r.removido);
+      let lista = base.filter(r=>r.nome.toLowerCase().includes(f) || r.origem.toLowerCase().includes(f));
+      if(ordenarPorEstrelas) lista.sort((a,b)=>b.estrelas-a.estrelas);
+      const cont = mostrarL ? lixeiraLista : listaEl;
+      cont.innerHTML='';
+      if(lista.length===0){ cont.innerHTML='<p>Nenhuma receita encontrada.</p>'; return; }
+      lista.forEach(r=>{
+        const div=document.createElement('div');
+        div.className='receita';
+        div.innerHTML=`
+          <img src="${r.imagem}" alt="${r.nome}" />
+          <div class="info-receita">
+            <h3>${r.nome}</h3>
+            <p><strong>Origem:</strong> ${r.origem}</p>
+            <div class="interacoes">
+              <span class="likes">👍 ${r.likes}</span>
+              <span class="dislikes">👎 ${r.dislikes}</span>
+              <span class="estrelas" data-id="${r.id}">${criarEstrelas(r.estrelas)}</span>
+              <button class="btn-comentar" data-id="${r.id}">Comentar</button>
+              ${mostrarL
+                ? `<button class="btn-recuperar" data-id="${r.id}">Recuperar</button><button class="btn-excluir" data-id="${r.id}">Excluir</button>`
+                : `<button class="btn-remover" data-id="${r.id}">Remover</button>`
+              }
+            </div>
+            <div class="comentarios" id="comentarios-${r.id}">
+              ${r.comentarios.length>0?'<strong>Comentários:</strong>':''}
+              <ul>${r.comentarios.map(c=>`<li>${c}</li>`).join('')}</ul>
+            </div>
+          </div>`;
+        cont.appendChild(div);
+
+        div.querySelector('.likes').addEventListener('click', ()=>{
+          if(!usuarioLogado){ alert('Você precisa estar logado para dar like.'); return;}
+          r.likes++; salvarEstado(); atualizarContadores(); renderizar(campoBusca.value, mostrandoL);
+        });
+        div.querySelector('.dislikes').addEventListener('click', ()=>{
+          if(!usuarioLogado){ alert('Você precisa estar logado para dar dislike.'); return;}
+          r.dislikes++; salvarEstado(); atualizarContadores(); renderizar(campoBusca.value, mostrandoL);
+        });
+        div.querySelectorAll('.estrela').forEach(el=>el.addEventListener('click',()=>{
+          if(!usuarioLogado){ alert('Você precisa estar logado para avaliar.'); return;}
+          r.estrelas = parseInt(el.dataset.estrela);
+          salvarEstado(); renderizar(campoBusca.value, mostrandoL);
+        }));
+        div.querySelector('.btn-comentar').addEventListener('click',()=>{
+          if(!usuarioLogado){ alert('Você precisa estar logado para comentar.'); return;}
+          const c = prompt('Digite seu comentário:');
+          if(c && c.trim()){ r.comentarios.push(c.trim()); salvarEstado(); renderizar(campoBusca.value, mostrandoL);}
+          else alert('Comentário vazio não foi adicionado.');
+        });
+        if(!mostrarL){
+          div.querySelector('.btn-remover').addEventListener('click',()=>{
+            if(!confirm(`Tem certeza que deseja remover a receita "${r.nome}"?`)) return;
+            r.removido=true; salvarEstado(); atualizarContadores(); renderizar(campoBusca.value, mostrandoL);
+          });
+        } else {
+          div.querySelector('.btn-recuperar').addEventListener('click',()=>{
+            r.removido=false; salvarEstado(); atualizarContadores(); renderizar(campoBusca.value, mostrandoL);
+          });
+          div.querySelector('.btn-excluir').addEventListener('click',()=>{
+            if(!confirm(`Deseja excluir permanentemente a receita "${r.nome}"?`)) return;
+            const idx = receitas.findIndex(x=>x.id===r.id);
+            if(idx!==-1) receitas.splice(idx,1);
+            salvarEstado(); atualizarContadores(); renderizar(campoBusca.value, mostrandoL);
+          });
+        }
+      });
+    }
+
+    function abrirModalLogin(){
+      modalLogin.classList.remove('oculto');
+      inputUsuario.value=''; inputSenha.value=''; erroLogin.textContent='';
+      tituloModal.textContent='Login';
+      btnEntrar.style.display='inline-block';
+      btnCriar.style.display='inline-block';
+    }
+
+    document.getElementById('btn-login').addEventListener('click', abrirModalLogin);
+    btnCancelar.addEventListener('click', ()=> modalLogin.classList.add('oculto'));
+
+    btnCriar.addEventListener('click', ()=>{
+      const u=inputUsuario.value.trim(), s=inputSenha.value.trim();
+      if(!u||!s){ erroLogin.textContent='Preencha usuário e senha.'; return;}
+      if(usuarios[u]){ erroLogin.textContent='Usuário já existe.'; return;}
+      usuarios[u]=s; usuarioLogado=u; salvarEstado(); modalLogin.classList.add('oculto'); atualizarUILogado();
+    });
+
+    btnEntrar.addEventListener('click', ()=>{
+      const u=inputUsuario.value.trim(), s=inputSenha.value.trim();
+      if(!u||!s){ erroLogin.textContent='Preencha usuário e senha.'; return;}
+      if(!usuarios[u]||usuarios[u]!==s){ erroLogin.textContent='Usuário ou senha inválidos.'; return;}
+      usuarioLogado=u; salvarEstado(); modalLogin.classList.add('oculto'); atualizarUILogado();
+    });
+
+    function atualizarUILogado(){
+      if(usuarioLogado){
+        loginArea.innerHTML=`<span>Olá, ${usuarioLogado}</span> <button id="btn-logout" class="botao-login">Sair</button>`;
+        document.getElementById('btn-logout').addEventListener('click', ()=>{
+          usuarioLogado=null; salvarEstado(); atualizarUILogado();
+        });
+      } else {
+        loginArea.innerHTML=`<button id="btn-login" class="botao-login">Entrar</button>`;
+        document.getElementById('btn-login').addEventListener('click', abrirModalLogin);
+      }
+    }
+
+    campoBusca.addEventListener('input', ()=> renderizar(campoBusca.value, mostrandoLixeira));
+    btnOrdenarEstrelas.addEventListener('click', ()=>{
+      ordenarPorEstrelas = !ordenarPorEstrelas;
+      btnOrdenarEstrelas.textContent = ordenarPorEstrelas ? 'Remover Ordenação' : 'Ordenar por Estrelas';
+      renderizar(campoBusca.value, mostrandoLixeira);
+    });
+
+    abaLixeiraBtn.addEventListener('click', ()=>{
+      mostrandoLixeira = !mostrandoLixeira;
+      abaLixeiraBtn.textContent = mostrandoLixeira ? 'Voltar às Receitas' : 'Ver Lixeira';
+      campoBusca.value=''; renderizar('', mostrandoLixeira);
+      listaEl.classList.toggle('oculto', mostrandoLixeira);
+      lixeiraLista.classList.toggle('oculto', !mostrandoLixeira);
+    });
+
+    btnAdicionar.addEventListener('click', ()=>{
+      if(!usuarioLogado){ alert('Você precisa estar logado para adicionar uma receita.'); return; }
+      modalAdicionar.classList.remove('oculto');
+      erroAdicionar.textContent='';
+      novoTitulo.value=''; novoAutor.value=''; novoCapa.value='';
+    });
+
+    cancelarAdicao.addEventListener('click', ()=> modalAdicionar.classList.add('oculto'));
+
+    confirmarAdicao.addEventListener('click', ()=>{
+      const t = novoTitulo.value.trim(), o = novoAutor.value.trim(), c = novoCapa.value.trim();
+      if(!t||!o||!c){ erroAdicionar.textContent='Preencha todos os campos.'; return; }
+      const id = receitas.length ? Math.max(...receitas.map(r=>r.id))+1 : 1;
+      receitas.push({ nome:t, origem:o, imagem:c, likes:0, dislikes:0, comentarios:[], estrelas:0, id, removido:false });
+      salvarEstado(); atualizarContadores(); renderizar(); modalAdicionar.classList.add('oculto');
+    });
+
+    carregarEstado(); atualizarUILogado(); atualizarContadores(); renderizar();
+  </script>
+</body>
+</html>
